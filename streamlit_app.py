@@ -8,7 +8,7 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.font_manager
 
-import random
+#import random
 
 # make sure the humor sans font is found. This only needs to be done once
 # on a system, but it is done here at start up for usage on share.streamlit.io.
@@ -22,10 +22,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # To Do: Why does caching update_plot hang?
 # @st.cache(suppress_st_warning=True)
-def update_plot():
-    xs, data, approx, f_input, show_solution, ticks_on = st.session_state.xs, st.session_state.data, st.session_state.approx, st.session_state.f_input, st.session_state.show_solution, st.session_state.ticks_on
-    show_polyfit_solution = st.session_state.show_polyfit_solution
-    function = st.session_state.function(xs)
+def update_plot(xs,ys,x_int,y_int):
     # Creates a Matplotlib plot if the dictionary st.session_state.handles is empty, otherwise
     # updates a Matplotlib plot by modifying the plot handles stored in st.session_state.handles.
     # The figure is stored in st.session_state.fig.
@@ -45,21 +42,13 @@ def update_plot():
     tmin = min(xs)
     tmax = max(xs)
     length = tmax-tmin
-    dt = round(length/10,1)
+    dt = round(length/10)
     
-    ymin = min(data)
-    ymax = max(data)
+    ymin = min(ys)
+    ymax = max(ys)
     heigth = ymax-ymin
-    dy = round(heigth/10,1)
+    dy = round(heigth/10)
     
-    if f_input:
-        f = lambda x: eval(f_input)
-    else:
-        f = lambda x: 0
-    ys= [f(x) for x in xs]
-    
-    approx = approx(xs)
-        
     handles = st.session_state.handles
 
     ax = st.session_state.mpl_fig.axes[0]
@@ -72,38 +61,24 @@ def update_plot():
         #######################
 
         # plot the data points
-        handles["datapoints"] = ax.plot(xs, data,
+        handles["function"] = ax.plot(xs, ys,
                                         color='g',
                                         linewidth=0,
                                         marker='o',
                                         ms=1,
-                                        label='data points')[0]#.format(degree))[0]
+                                        label='function f(x)')[0]#.format(degree))[0]
 
         # plot f and append the plot handle
-        handles["f_input"] = ax.plot(xs, ys,
+        handles["integral"] = ax.plot(xs, y_int,
                                       color='b',
-                                      label="your best guess")[0]
-
-        # plot actual function and append the plot handle
-        handles["actual"] = ax.plot(xs, function,
-                                      color='g',
-                                      label="actual function")[0]
-
-        handles["actual"].set_visible(show_solution)
-        
-        # plot approximation and append the plot handle
-        handles["approx"] = ax.plot(xs, approx,
-                                      color='orange',
-                                      label="np.polyfit guess")[0]
-
-        handles["approx"].set_visible(show_polyfit_solution)
+                                      label="integral F(x)")[0]
 
         ###############################
         # Beautify the plot some more #
         ###############################
 
-        plt.title('Approximation of a series of data points')
-        plt.xlabel('t', horizontalalignment='right', x=1)
+        plt.title('Integration of a function')
+        plt.xlabel('x', horizontalalignment='right', x=1)
         plt.ylabel('y', horizontalalignment='right', x=0, y=1)
 
         # set the z order of the axes spines
@@ -114,6 +89,9 @@ def update_plot():
         ax.spines['top'].set_color('none')
         ax.spines['bottom'].set_position(('data', 0))
         ax.spines['right'].set_color('none')
+        
+        # show integral
+        #handles['fill']=
 
     else:
         ###################
@@ -121,27 +99,16 @@ def update_plot():
         ###################
 
         # Update the data points plot
-        handles["datapoints"].set_xdata(xs)
-        handles["datapoints"].set_ydata(data)
+        handles["function"].set_xdata(xs)
+        handles["function"].set_ydata(ys)
 
-        # update the input plot
-        handles["f_input"].set_xdata(xs)
-        handles["f_input"].set_ydata(ys)
-
-        # update the input plot
-        handles["actual"].set_xdata(xs)
-        handles["actual"].set_ydata(function)
-
-        # update the visibility of the Taylor expansion
-        handles["actual"].set_visible(show_solution)
+        # update the integral plot
+        handles["integral"].set_xdata(xs)
+        handles["integral"].set_ydata(y_int)
         
-        # update the input plot
-        handles["approx"].set_xdata(xs)
-        handles["approx"].set_ydata(approx)
-
-        # update the visibility of the Taylor expansion
-        handles["approx"].set_visible(show_polyfit_solution)
-
+        # show integral
+        #handles['fill'].set_y1(y_int)
+        
     # set x and y ticks, labels and limits respectively
     if ticks_on:
         xticks = [x for x in np.arange(tmin,tmax,dt).round(1)]
@@ -172,140 +139,69 @@ def update_plot():
     
 
     # show legend
-    legend_handles = [handles["datapoints"], ]
-    legend_handles.append(handles['f_input'])
-    if show_solution:
-        legend_handles.append(handles["actual"])
-    if show_polyfit_solution:
-        legend_handles.append(handles["approx"])
+    legend_handles = [handles["function"], ]
+    legend_handles.append(handles['integral'])
     ax.legend(handles=legend_handles,
               loc='upper center',
               bbox_to_anchor=(0.5, -0.15),
               ncol=2)
+    
+    ax.fill_between(
+        x=xs, 
+        y1= y_int, 
+        #where= (-1 < t)&(t < 1),
+        color= "b",
+        alpha= 0.2)
 
     # make all changes visible
     st.session_state.mpl_fig.canvas.draw()
 
-@st.experimental_singleton
-def create_new_factors(datatype,f_data_input):
-    a = round(random.random(),3)
-    b = round(random.random(),3)
-    c = round(random.random(),3)
-    if datatype == 'constant':
-        function = lambda x: a
-        factors=[a]
-    elif datatype == 'linear':
-        #data = ax + b
-        function = lambda x: a*x + b
-        factors=[a,b]
-    elif datatype == 'quadratic':
-        #data = ax^2+bx+c
-        function = lambda x: a*x**2 + b*x + c
-        factors=[a,b,c]
-    elif datatype == 'custom':
-        if not f_data_input == '':
-            function = lambda x: eval(f_data_input)
-        else:
-            function = lambda x: 0
-        factors = ''
-    return function, factors
+def interpret_f(f_input,xs):
+    if f_input:
+        f = lambda x: eval(f_input)#literal_eval(f_input)
+    else:
+        f = lambda x: 0
+    ys = [f(x) for x in xs]
+    return f,ys
 
-# can only cache one function output, otherwise things get stuck
-#@st.experimental_singleton
-def create_randomization(dist_type):
-    n = st.session_state.n
-    length = st.session_state.length
-    xs = np.random.rand(n)*length
-    xs.sort()
-    if dist_type == 'normal':
-        dev = np.random.normal(0,st.session_state.sigma,n)
-    elif dist_type == 'equal':
-        dev = np.random.rand(n)*st.session_state.sigma
-    return dev,xs
-    
-def create_new_points():
-    dev,xs = create_randomization(st.session_state.dist_type)
-    st.session_state.xs = xs
-    st.session_state.data = st.session_state.function(xs) + dev
-    return
-
-def reset_rnd():
-    st.experimental_singleton.clear()
-    request_new_data()
-    return
-
-def update_approx():
-    xs,data,approxtype = st.session_state.xs,st.session_state.data,st.session_state.approxtype
-    if approxtype == 'constant':
-        z=np.polyfit(xs,data,0)
-    elif approxtype == 'linear':
-        z=np.polyfit(xs,data,1)
-    elif approxtype == 'quadratic':
-        z=np.polyfit(xs,data,2)
-    elif approxtype == 'cubic':
-        z=np.polyfit(xs,data,3)
-    st.session_state.approx=np.poly1d(z)
-    return
-
-def request_new_data():
-    st.session_state.create_new_data = 1
-    return
-def request_new_points():
-    st.session_state.create_new_points = 1
-    return
+def create_data(inttype,n,xs,f,n_int,x_int):
+    if inttype == 'linke Rechteckregel':
+        y_int = np.zeros(n)
+        i=0
+        for x in xs:
+            i_eval = np.searchsorted(x_int,x,side='right')-1#*int(n/n_int)
+            x_eval = x_int[i_eval]
+            y_int[i] = f(x_eval)
+            i += 1
+    elif inttype == 'rechte Rechteckregel':
+        y_int = np.zeros(n)
+        i=0
+        for x in xs:
+            i_eval = np.searchsorted(x_int,x,side='left')#*int(n/n_int)
+            x_eval = x_int[i_eval]
+            y_int[i] = f(x_eval)
+            i += 1
+    elif inttype == 'Trapezregel':
+        y_int = np.zeros(n)
+        i=0
+        for x in xs:
+            i_left = np.searchsorted(x_int,x,side='right')-1
+            i_right= np.searchsorted(x_int,x,side='left')#*int(n/n_int)
+            x1 = x_int[i_left]
+            x2 = x_int[i_right]
+            y1 = f(x1)
+            y2 = f(x2)
+            # y = (y2-y1)/(x2-x1) * x + (x2y1-x1y2)/(x2-x1)
+            if x1 == x2:
+                y_int[i] = y1
+            else:
+                y_int[i] = (y2-y1)/(x2-x1) * x + (x2*y1-x1*y2)/(x2-x1)
+            i += 1
+    return y_int
 
 def clear_figure():
     del st.session_state['mpl_fig']
     del st.session_state['handles']
-
-def write_solution_description():
-    solution_description = r'''np.polyfit guesses: $f(x)\approx '''
-    factors=np.round(st.session_state.approx,2)
-    deg = len(factors)-1
-    for i in range(0,deg+1):
-        if (factors[i] > 0) & (i > 0):
-            solution_description+='+'
-        if deg-i > 1:
-            solution_description+=str(factors[i]) + 'x^' + str(deg-i)
-        elif deg-i == 1:
-            solution_description+=str(factors[i]) + 'x'
-        elif deg-i == 0:
-            solution_description+=str(factors[i])
-    solution_description+='''$'''
-    st.session_state.solution_description=solution_description
-    return
-
-def write_actual_function():
-    actual_function = r'''actual function is $f(x) = '''
-    if st.session_state.factors == '':
-        actual_function+=st.session_state.f_data_input
-        actual_function+='''$'''
-    else:
-        actual_factors = st.session_state.factors
-        deg = len(actual_factors)-1
-        for i in range(0,deg+1):
-            if (actual_factors[i] > 0) & (i > 0):
-                actual_function+='+'
-            if deg-i > 1:
-                actual_function+=str(actual_factors[i]) + 'x^' + str(deg-i)
-            elif deg-i == 1:
-                actual_function+=str(actual_factors[i]) + 'x'
-            elif deg-i == 0:
-                actual_function+=str(actual_factors[i])
-        actual_function+='''$'''
-    st.session_state.actual_function=actual_function
-    return
-
-###############################################################################
-# setup session_state variables
-if 'create_new_data' not in st.session_state:
-    st.session_state.create_new_data = 1
-if 'create_new_points' not in st.session_state:
-    st.session_state.create_new_points = 0
-if 'approx' not in st.session_state:
-    st.session_state.approx = {}
-if 'data' not in st.session_state:
-    st.session_state.data = []
 
 ###############################################################################
 # main
@@ -315,51 +211,23 @@ if 'data' not in st.session_state:
 st.sidebar.title("Advanced settings")
 
 # Data options
+st.sidebar.markdown("Data Options")
 
-st.session_state.datatype = st.sidebar.selectbox(label="data type",
-                            options=('constant','linear','quadratic','custom'),
-                            index=2,
-                            on_change=request_new_data())
-
-if st.session_state.datatype == 'custom':
-    f_data_input = st.sidebar.text_input(label='input the data function',
-                         value='0.5*x**2 + 1*x - 2',
-                         key='f_data_input',
-                         on_change=request_new_data(),
-                         help='''type e.g. 'math.sin(x)' to generate a sine function''')
-else:
-    st.session_state.f_data_input = ''
-    
-st.session_state.dist_type = st.sidebar.select_slider('select distribution type',
-                                         ['normal','equal'],
-                                         on_change=request_new_points())
-
-# deviation could be dependent on the total height of the function - but this would need to be re-looped. can't be bothered...
-# if 'data' in st.session_state:
-#     height = max(st.session_state.data)
-# else:
-#     height = 100
-st.session_state.sigma = st.sidebar.number_input('deviation (standard deviation sigma for normal distribution, range for equal distribution)',
-                            min_value=float(0),
-                            max_value=float(100),
-                            # value=0.1*height,
-                            value=float(10),
-                            step=0.01,
-                            on_change=request_new_points())
-
-st.session_state.n = st.sidebar.slider(
-            'number of data points',
+n = st.sidebar.slider(
+            'resolution',
             min_value=0,
-            max_value=1000,
-            value=100,
-            on_change=request_new_points())
+            max_value=5000,
+            value=500)
     
-
-st.session_state.length = st.sidebar.slider('length of interval',
-                       min_value = float(1),
+xmin = st.sidebar.slider('xmin',
+                       min_value = float(0),
                        max_value = float(50),
-                       value = float(10),
-                       on_change=request_new_points())
+                       value = float(0))
+
+xmax = st.sidebar.slider('xmax',
+                       min_value = float(0),
+                       max_value = float(50),
+                       value = float(10))
 
 # Visualization Options
 st.sidebar.markdown("Visualization Options")
@@ -393,56 +261,29 @@ if qr:
 else:
     st.title('Approximated Data Points')
         
-st.markdown('''If you want to create a new function or input your own function, change the advanced settings (top-left).''')
-st.markdown('''The data points will change at random when you guess a new function, but the function you should guess remains the same!''')
-
-col1,col2 = st.columns(2)
+col1,col2,col3 = st.columns(3)
 with col1:
-    st.session_state.f_input = st.text_input(label='input your guessed function',
-                         value='0.2*x**2 + 1*x - 2',
+    f_input = st.text_input(label='input your function',
+                         value='0.2*x**2 + 0.5 - x*math.sin(x)',
                          help='''type e.g. 'math.sin(x)' to generate a sine function''')
 
-col1,col2,col3,col4 = st.columns(4)
-with col1:
-    st.session_state.show_solution = st.checkbox("show the actual function",
-                                value=False,
-                                on_change=clear_figure)
-    st.session_state.show_polyfit_solution = st.checkbox("show the np.polyfit solution",
-                                value=False,
-                                on_change=clear_figure)
-if st.session_state.show_polyfit_solution:
-    with col2:
-        st.session_state.approxtype = st.selectbox(label='approximation type',
-                                      options=('constant','linear','quadratic','cubic'),
-                                      index=2)
-else: st.session_state.approxtype = 'constant'
+with col2:
+    inttype = st.selectbox(label='integration type',
+                           options=('linke Rechteckregel','rechte Rechteckregel','Trapezregel'))
 
-###
-# for some reason, reset still doesn't work...
-# with col4:
-#     st.button(label='create new randomization',on_click=reset_rnd())
+with col3:
+    n_int = st.number_input(label='number of integration points',
+                            min_value = 1,
+                            max_value = 50,
+                            value = 4)
     
-if (st.session_state.create_new_data==1):
-    st.session_state.function, st.session_state.factors = create_new_factors(st.session_state.datatype,st.session_state.f_data_input)
-    create_new_points()
-    update_approx()
-    st.session_state.create_new_data = 0
-    st.session_state.create_new_points = 0
-elif (st.session_state.create_new_points==1):
-    create_new_points()
-    update_approx()
-    st.session_state.create_new_points = 0
-
-
-col1,col2,col3,col4=st.columns(4)
-if st.session_state.show_solution:
-    write_actual_function()
-    with col1:
-        st.markdown(st.session_state.actual_function)
-if st.session_state.show_polyfit_solution:
-    write_solution_description()
-    with col2:
-        st.markdown(st.session_state.solution_description)
+xs = np.linspace(xmin,xmax,n)
+x_int = np.linspace(xmin,xmax,n_int)
+f,ys = interpret_f(f_input,xs)
+y_int = create_data(inttype,n,xs,f,n_int,x_int)
+    
+##############################################################################
+# Plotting
 
 if xkcd:
     # set rc parameters to xkcd style
@@ -460,5 +301,5 @@ if 'handles' not in st.session_state:
     st.session_state.handles = {}
 
 # update plot
-update_plot()
+update_plot(xs,ys,x_int,y_int)
 st.pyplot(st.session_state.mpl_fig)
