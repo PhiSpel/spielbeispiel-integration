@@ -43,15 +43,18 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     tmin = min(xs)
     tmax = max(xs)
     length = tmax-tmin
-    if length > 5:
+    if length >= 5:
         dt = round(length/10)
     else:
-        dt = round(length/10,1)
+        dt = 0.1
     
     ymin = min(ys)
     ymax = max(ys)
-    heigth = ymax-ymin
-    dy = round(heigth/10)
+    height = ymax-ymin
+    if height >= 5:
+        dy = round(height/10)
+    else:
+        dy = 0.2
     
     handles = st.session_state.handles
 
@@ -112,7 +115,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
         
     # set x and y ticks, labels and limits respectively
     if ticks_on:
-        xticks = [x for x in np.arange(tmin,tmax,dt).round(1)]
+        xticks = [x for x in np.arange(round(tmin-0.5),round(tmax+0.5),dt).round(1)]
     else:
         xticks=[]
     xticklabels = [str(x) for x in xticks]
@@ -124,7 +127,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ax.set_xticklabels(xticklabels)
 
     if ticks_on:
-        yticks = [x for x in np.arange(round(min(ymin,0)),round(ymax),dy).round(1)]
+        yticks = [x for x in np.arange(round(ymin-0.5),round(ymax+0.5),dy).round(1)]
     else:
         yticks=[]
     yticklabels = [str(x) for x in yticks]
