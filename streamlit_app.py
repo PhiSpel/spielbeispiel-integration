@@ -131,7 +131,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ax.set_xticklabels(xticklabels)
 
     if ticks_on:
-        yticks = [x for x in np.arange(0,round(ymax+0.5),dy).round(1)]
+        yticks = [x for x in np.arange(min(0,round(ymin-0.5)),round(ymax+0.5),dy).round(1)]
     else:
         yticks=[]
     yticklabels = [str(x) for x in yticks]
