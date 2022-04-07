@@ -130,7 +130,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ax.set_xticklabels(xticklabels)
 
     if ticks_on:
-        yticks = [x for x in np.arange(round(ymin),round(ymax),dy).round(1)]
+        yticks = [x for x in np.arange(round(min(ymin,0)),round(ymax),dy).round(1)]
     else:
         yticks=[]
     yticklabels = [str(x) for x in yticks]
@@ -142,7 +142,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
 
     # set the x and y limits
     ax.set_xlim([tmin-0.5, tmax+0.5])
-    ax.set_ylim([ymin-0.5, ymax+0.5])
+    ax.set_ylim([(min(ymin,0)-0.5), ymax+0.5])
     
 
     # show legend
@@ -215,21 +215,21 @@ st.sidebar.title("Advanced settings")
 # Data options
 st.sidebar.markdown("Data Options")
 
-n = st.sidebar.slider(
+n = st.sidebar.number_input(
             'resolution',
-            min_value=0,
+            min_value=500,
             max_value=5000,
             value=1000)
     
-xmin = st.sidebar.slider('xmin',
-                       min_value = float(0),
-                       max_value = float(50),
-                       value = float(0))
+xmin = st.sidebar.number_input('xmin',
+                       min_value = 0,
+                       max_value = 50,
+                       value = 0)
 
-xmax = st.sidebar.slider('xmax',
-                       min_value = float(0),
-                       max_value = float(50),
-                       value = float(10))
+xmax = st.sidebar.number_input('xmax',
+                       min_value = 0,
+                       max_value = 50,
+                       value = 10)
 
 # Visualization Options
 st.sidebar.markdown("Visualization Options")
@@ -277,7 +277,7 @@ with col2:
 with col3:
     n_int = st.number_input(label='number of points to integrate between',
                             min_value = 1,
-                            max_value = 50,
+                            max_value = 300,
                             value = 8)
     
 xs = np.linspace(xmin,xmax,n)
