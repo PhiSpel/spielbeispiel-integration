@@ -53,9 +53,9 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ymin = min(ys)
     ymax = max(ys)
     height = ymax-ymin
-    if height > 5:
-        dy = round(height/10)
-    elif height >= 2:
+    if abs(ymax) > 5:
+        dy = round(ymax/10)
+    elif abs(ymax) >= 2:
         dy = 0.5
     else:
         dy = 0.1
@@ -131,7 +131,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ax.set_xticklabels(xticklabels)
 
     if ticks_on:
-        yticks = [x for x in np.arange(round(ymin-0.5),round(ymax+0.5),dy).round(1)]
+        yticks = [x for x in np.arange(0,round(ymax+0.5),dy).round(1)]
     else:
         yticks=[]
     yticklabels = [str(x) for x in yticks]
