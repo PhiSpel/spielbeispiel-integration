@@ -64,9 +64,9 @@ def update_plot(xs,ys,x_int,y_int):
         # plot the data points
         handles["function"] = ax.plot(xs, ys,
                                         color='g',
-                                        linewidth=0,
-                                        marker='o',
-                                        ms=1,
+                                        #linewidth=0,
+                                        #marker='o',
+                                        #ms=1,
                                         label='function f(x)')[0]#.format(degree))[0]
 
         # plot f and append the plot handle
