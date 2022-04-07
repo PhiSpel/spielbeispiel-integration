@@ -43,7 +43,10 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     tmin = min(xs)
     tmax = max(xs)
     length = tmax-tmin
-    dt = round(length/10)
+    if length > 5:
+        dt = round(length/10)
+    else:
+        dt = round(length/10,1)
     
     ymin = min(ys)
     ymax = max(ys)
@@ -69,11 +72,11 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
                                         #ms=1,
                                         label='function f(x)')[0]#.format(degree))[0]
 
-        # # plot f and append the plot handle
-        # handles["integral"] = ax.plot(xs, y_int,
-        #                               color='b',
-        #                               label="integral")[0]
-
+        # show integral
+        verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
+        handles["poly"] = Polygon(verts, facecolor='b', edgecolor='b',label="integral F(x)",fill=True,alpha=0.5)
+        handles["filling"] = ax.add_patch(handles["poly"])
+        
         ###############################
         # Beautify the plot some more #
         ###############################
@@ -90,11 +93,6 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
         ax.spines['top'].set_color('none')
         ax.spines['bottom'].set_position(('data', 0))
         ax.spines['right'].set_color('none')
-        
-        # show integral
-        verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
-        handles["poly"] = Polygon(verts, facecolor='b', edgecolor='b',label="integral F(x)",fill=True,alpha=0.5)
-        handles["filling"] = ax.add_patch(handles["poly"])
 
     else:
         ###################
@@ -104,10 +102,6 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
         # Update the data points plot
         handles["function"].set_xdata(xs)
         handles["function"].set_ydata(ys)
-
-        # # update the integral plot
-        # handles["integral"].set_xdata(xs)
-        # handles["integral"].set_ydata(y_int)
         
         # remove old integral
         handles["filling"].remove()
@@ -144,7 +138,6 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ax.set_xlim([tmin-0.5, tmax+0.5])
     ax.set_ylim([(min(ymin,0)-0.5), ymax+0.5])
     
-
     # show legend
     handles["poly"].set_label('integral A = ' + str(integral_sum) + ', actual integral is ' + str(integral_sum_real))
     legend_handles = [handles["function"],handles["poly"]]
@@ -165,38 +158,20 @@ def interpret_f(f_input,xs):
     return f,ys
 
 def create_data(inttype,n,xs,f,n_int,x_int):
-    if inttype == 'left Riemann sum':
-        y_int = np.zeros(n)
-        i=0
-        for x in xs:
-            i_eval = np.searchsorted(x_int,x,side='right')-1#*int(n/n_int)
-            x_eval = x_int[i_eval]
-            y_int[i] = f(x_eval)
-            i += 1
-    elif inttype == 'right Riemann sum':
-        y_int = np.zeros(n)
-        i=0
-        for x in xs:
-            i_eval = np.searchsorted(x_int,x,side='left')#*int(n/n_int)
-            x_eval = x_int[i_eval]
-            y_int[i] = f(x_eval)
-            i += 1
-    elif inttype == 'Trapezoidal Riemann sum':
-        y_int = np.zeros(n)
-        i=0
-        for x in xs:
-            i_left = np.searchsorted(x_int,x,side='right')-1
-            i_right= np.searchsorted(x_int,x,side='left')#*int(n/n_int)
-            x1 = x_int[i_left]
-            x2 = x_int[i_right]
-            y1 = f(x1)
-            y2 = f(x2)
+    y_int = np.zeros(n)
+    for i_int in np.arange(0,len(x_int)-1):
+        x_left = x_int[i_int]
+        f_left = f(x_left)
+        x_right = x_int[i_int+1]
+        f_right = f(x_right)
+        if inttype == 'left Riemann sum':
+            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_left
+        elif inttype == 'right Riemann sum':
+            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_right
+        elif inttype == 'Trapezoidal Riemann sum':
             # y = (y2-y1)/(x2-x1) * x + (x2y1-x1y2)/(x2-x1)
-            if x1 == x2:
-                y_int[i] = y1
-            else:
-                y_int[i] = (y2-y1)/(x2-x1) * x + (x2*y1-x1*y2)/(x2-x1)
-            i += 1
+            xs_i = xs[np.less(xs,x_right)*np.greater_equal(xs,x_left)]
+            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = (f_left-f_right)/(x_left-x_right) * xs_i + (x_left*f_right-x_right*f_left)/(x_left-x_right)
     integral_sum = round(sum(y_int/len(xs)),2)
     integral_sum_real = round(sum(ys/len(xs)),2)
     return y_int, integral_sum, integral_sum_real
