@@ -6,6 +6,7 @@ import numpy as np
 import math
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 import matplotlib.font_manager
 
 #import random
@@ -91,7 +92,9 @@ def update_plot(xs,ys,x_int,y_int):
         ax.spines['right'].set_color('none')
         
         # show integral
-        #handles['fill']=
+        verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
+        handles["poly"] = Polygon(verts, facecolor='0.9', edgecolor='0.5')
+        handles["filling"] = ax.add_patch(handles["poly"])
 
     else:
         ###################
@@ -106,8 +109,12 @@ def update_plot(xs,ys,x_int,y_int):
         handles["integral"].set_xdata(xs)
         handles["integral"].set_ydata(y_int)
         
+        handles["filling"].remove()
+        
         # show integral
-        #handles['fill'].set_y1(y_int)
+        verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
+        handles["poly"].set_xy(verts)
+        handles["filling"] = ax.add_patch(handles["poly"])
         
     # set x and y ticks, labels and limits respectively
     if ticks_on:
@@ -145,13 +152,6 @@ def update_plot(xs,ys,x_int,y_int):
               loc='upper center',
               bbox_to_anchor=(0.5, -0.15),
               ncol=2)
-    
-    ax.fill_between(
-        x=xs, 
-        y1= y_int, 
-        #where= (-1 < t)&(t < 1),
-        color= "b",
-        alpha= 0.2)
 
     # make all changes visible
     st.session_state.mpl_fig.canvas.draw()
@@ -217,7 +217,7 @@ n = st.sidebar.slider(
             'resolution',
             min_value=0,
             max_value=5000,
-            value=500)
+            value=1000)
     
 xmin = st.sidebar.slider('xmin',
                        min_value = float(0),
@@ -272,10 +272,10 @@ with col2:
                            options=('linke Rechteckregel','rechte Rechteckregel','Trapezregel'))
 
 with col3:
-    n_int = st.number_input(label='number of integration points',
+    n_int = st.number_input(label='number of points to integrate between',
                             min_value = 1,
                             max_value = 50,
-                            value = 4)
+                            value = 5)
     
 xs = np.linspace(xmin,xmax,n)
 x_int = np.linspace(xmin,xmax,n_int)
