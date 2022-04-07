@@ -43,7 +43,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     tmin = min(xs)
     tmax = max(xs)
     length = tmax-tmin
-    if length >= 5:
+    if length > 5:
         dt = round(length/10)
     elif length >= 2:
         dt = 0.5
@@ -53,7 +53,7 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     ymin = min(ys)
     ymax = max(ys)
     height = ymax-ymin
-    if height >= 5:
+    if height > 5:
         dy = round(height/10)
     elif height >= 2:
         dy = 0.5
