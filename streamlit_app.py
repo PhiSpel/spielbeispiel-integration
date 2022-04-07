@@ -23,7 +23,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # To Do: Why does caching update_plot hang?
 # @st.cache(suppress_st_warning=True)
-def update_plot(xs,ys,x_int,y_int):
+def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     # Creates a Matplotlib plot if the dictionary st.session_state.handles is empty, otherwise
     # updates a Matplotlib plot by modifying the plot handles stored in st.session_state.handles.
     # The figure is stored in st.session_state.fig.
@@ -69,10 +69,10 @@ def update_plot(xs,ys,x_int,y_int):
                                         #ms=1,
                                         label='function f(x)')[0]#.format(degree))[0]
 
-        # plot f and append the plot handle
-        handles["integral"] = ax.plot(xs, y_int,
-                                      color='b',
-                                      label="integral F(x)")[0]
+        # # plot f and append the plot handle
+        # handles["integral"] = ax.plot(xs, y_int,
+        #                               color='b',
+        #                               label="integral")[0]
 
         ###############################
         # Beautify the plot some more #
@@ -93,7 +93,7 @@ def update_plot(xs,ys,x_int,y_int):
         
         # show integral
         verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
-        handles["poly"] = Polygon(verts, facecolor='0.9', edgecolor='0.5')
+        handles["poly"] = Polygon(verts, facecolor='b', edgecolor='b',label="integral F(x)",fill=True,alpha=0.5)
         handles["filling"] = ax.add_patch(handles["poly"])
 
     else:
@@ -105,13 +105,13 @@ def update_plot(xs,ys,x_int,y_int):
         handles["function"].set_xdata(xs)
         handles["function"].set_ydata(ys)
 
-        # update the integral plot
-        handles["integral"].set_xdata(xs)
-        handles["integral"].set_ydata(y_int)
+        # # update the integral plot
+        # handles["integral"].set_xdata(xs)
+        # handles["integral"].set_ydata(y_int)
         
+        # remove old integral
         handles["filling"].remove()
-        
-        # show integral
+        # show new integral
         verts = [(tmin, 0), *zip(xs, y_int), (tmax, 0)]
         handles["poly"].set_xy(verts)
         handles["filling"] = ax.add_patch(handles["poly"])
@@ -146,8 +146,8 @@ def update_plot(xs,ys,x_int,y_int):
     
 
     # show legend
-    legend_handles = [handles["function"], ]
-    legend_handles.append(handles['integral'])
+    handles["poly"].set_label('integral A = ' + str(integral_sum) + ', actual integral is ' + str(integral_sum_real))
+    legend_handles = [handles["function"],handles["poly"]]
     ax.legend(handles=legend_handles,
               loc='upper center',
               bbox_to_anchor=(0.5, -0.15),
@@ -161,11 +161,11 @@ def interpret_f(f_input,xs):
         f = lambda x: eval(f_input)#literal_eval(f_input)
     else:
         f = lambda x: 0
-    ys = [f(x) for x in xs]
+    ys = np.array([f(x) for x in xs])
     return f,ys
 
 def create_data(inttype,n,xs,f,n_int,x_int):
-    if inttype == 'linke Rechteckregel':
+    if inttype == 'left Riemann sum':
         y_int = np.zeros(n)
         i=0
         for x in xs:
@@ -173,7 +173,7 @@ def create_data(inttype,n,xs,f,n_int,x_int):
             x_eval = x_int[i_eval]
             y_int[i] = f(x_eval)
             i += 1
-    elif inttype == 'rechte Rechteckregel':
+    elif inttype == 'right Riemann sum':
         y_int = np.zeros(n)
         i=0
         for x in xs:
@@ -181,7 +181,7 @@ def create_data(inttype,n,xs,f,n_int,x_int):
             x_eval = x_int[i_eval]
             y_int[i] = f(x_eval)
             i += 1
-    elif inttype == 'Trapezregel':
+    elif inttype == 'Trapezoidal Riemann sum':
         y_int = np.zeros(n)
         i=0
         for x in xs:
@@ -197,7 +197,9 @@ def create_data(inttype,n,xs,f,n_int,x_int):
             else:
                 y_int[i] = (y2-y1)/(x2-x1) * x + (x2*y1-x1*y2)/(x2-x1)
             i += 1
-    return y_int
+    integral_sum = round(sum(y_int/len(xs)),2)
+    integral_sum_real = round(sum(ys/len(xs)),2)
+    return y_int, integral_sum, integral_sum_real
 
 def clear_figure():
     del st.session_state['mpl_fig']
@@ -253,7 +255,7 @@ ticks_on = st.sidebar.checkbox("show xticks and yticks",
 if qr:
     tcol1, tcol2 = st.columns(2)
     with tcol1:
-        st.title('Approximated Data Points')
+        st.title('Integration of a function f(x)')
     with tcol2:
         st.markdown('## <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='
                     'https://share.streamlit.io/PhiSpel/spielbeispiel-interpolation/main" width="200"/>',
@@ -269,18 +271,19 @@ with col1:
 
 with col2:
     inttype = st.selectbox(label='integration type',
-                           options=('linke Rechteckregel','rechte Rechteckregel','Trapezregel'))
+                           options=('left Riemann sum','right Riemann sum','Trapezoidal Riemann sum'),
+                           index=1)
 
 with col3:
     n_int = st.number_input(label='number of points to integrate between',
                             min_value = 1,
                             max_value = 50,
-                            value = 5)
+                            value = 8)
     
 xs = np.linspace(xmin,xmax,n)
 x_int = np.linspace(xmin,xmax,n_int)
 f,ys = interpret_f(f_input,xs)
-y_int = create_data(inttype,n,xs,f,n_int,x_int)
+y_int, integral_sum, integral_sum_real = create_data(inttype,n,xs,f,n_int,x_int)
     
 ##############################################################################
 # Plotting
@@ -301,5 +304,5 @@ if 'handles' not in st.session_state:
     st.session_state.handles = {}
 
 # update plot
-update_plot(xs,ys,x_int,y_int)
+update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real)
 st.pyplot(st.session_state.mpl_fig)
