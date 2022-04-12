@@ -6,6 +6,9 @@ import numpy as np
 import math
 
 import matplotlib.pyplot as plt
+from scipy import interpolate
+
+import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import matplotlib.font_manager
 
@@ -150,8 +153,9 @@ def update_plot(xs,ys,x_int,y_int, integral_sum, integral_sum_real):
     legend_handles = [handles["function"],handles["poly"]]
     ax.legend(handles=legend_handles,
               loc='upper center',
-              bbox_to_anchor=(0.5, -0.15),
-              ncol=2)
+              #bbox_to_anchor=(0.5, -0.15),
+              ncol=2,
+              shadow = True)
 
     # make all changes visible
     st.session_state.mpl_fig.canvas.draw()
@@ -166,19 +170,35 @@ def interpret_f(f_input,xs):
 
 def create_data(inttype,n,xs,f,n_int,x_int):
     y_int = np.zeros(n)
-    for i_int in np.arange(0,len(x_int)-1):
-        x_left = x_int[i_int]
-        f_left = f(x_left)
-        x_right = x_int[i_int+1]
-        f_right = f(x_right)
-        if inttype == 'left Riemann sum':
-            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_left
-        elif inttype == 'right Riemann sum':
-            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_right
-        elif inttype == 'Trapezoidal Riemann sum':
-            # y = (y2-y1)/(x2-x1) * x + (x2y1-x1y2)/(x2-x1)
-            xs_i = xs[np.less(xs,x_right)*np.greater_equal(xs,x_left)]
-            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = (f_left-f_right)/(x_left-x_right) * xs_i + (x_left*f_right-x_right*f_left)/(x_left-x_right)
+    if not inttype == "Simpson's rule":
+        for i_int in np.arange(0,len(x_int)-1):
+            x_left = x_int[i_int]
+            f_left = f(x_left)
+            x_right = x_int[i_int+1]
+            f_right = f(x_right)
+            if inttype == 'left Riemann sum':
+                y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_left
+            elif inttype == 'right Riemann sum':
+                y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = f_right
+            elif inttype == 'Trapezoidal Riemann sum':
+                # y = (y2-y1)/(x2-x1) * x + (x2y1-x1y2)/(x2-x1)
+                xs_i = xs[np.less(xs,x_right)*np.greater_equal(xs,x_left)]
+                y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = (f_left-f_right)/(x_left-x_right) * xs_i + (x_left*f_right-x_right*f_left)/(x_left-x_right)
+    else:
+        for i_int in np.arange(0,len(x_int)-2,2):
+            x_left = x_int[i_int]
+            x_right= x_int[i_int+2]
+            x_mid  = x_int[i_int+1]
+            #print(str(x_left)+' '+str(x_mid)+' '+str(x_right))
+            f_left = f(x_left)
+            f_mid  = f(x_mid)
+            f_right= f(x_right)
+            x = [x_left,x_mid,x_right]
+            y = [f_left,f_mid,f_right]
+            f_int = interpolate.interp1d(x, y, kind='quadratic')
+            xnew = xs[np.less(xs,x_right)*np.greater_equal(xs,x_left)]
+            ynew = f_int(xnew)
+            y_int[np.less(xs,x_right)*np.greater_equal(xs,x_left)] = ynew
     integral_sum = round(sum(y_int/len(xs)),2)
     integral_sum_real = round(sum(ys/len(xs)),2)
     return y_int, integral_sum, integral_sum_real
@@ -253,14 +273,23 @@ with col1:
 
 with col2:
     inttype = st.selectbox(label='integration type',
-                           options=('left Riemann sum','right Riemann sum','Trapezoidal Riemann sum'),
+                           options=('left Riemann sum','right Riemann sum','Trapezoidal Riemann sum',"Simpson's rule"),
                            index=1)
 
-with col3:
-    n_int = st.number_input(label='number of points to integrate between',
-                            min_value = 1,
-                            max_value = 300,
-                            value = 8)
+if inttype == "Simpson's rule":
+    with col3:
+        n_int = st.number_input(label='number of points to integrate between',
+                                min_value = 1,
+                                max_value = 300,
+                                value = 9,
+                                step=2,
+                                help="Simpson's rule only works with uneven numbers of integration points.")
+else:
+    with col3:
+        n_int = st.number_input(label='number of points to integrate between',
+                                min_value = 1,
+                                max_value = 300,
+                                value = 8)
     
 xs = np.linspace(xmin,xmax,n)
 x_int = np.linspace(xmin,xmax,n_int)
