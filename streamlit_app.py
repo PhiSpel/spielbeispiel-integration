@@ -260,7 +260,7 @@ if qr:
         st.title('Integration of a function f(x)')
     with tcol2:
         st.markdown('## <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='
-                    'https://share.streamlit.io/PhiSpel/spielbeispiel-interpolation/main" width="200"/>',
+                    'https://share.streamlit.io/PhiSpel/spielbeispiel-integration/main" width="200"/>',
                     unsafe_allow_html=True)
 else:
     st.title('Approximated Data Points')
