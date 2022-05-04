@@ -5,7 +5,7 @@
 
 This is a simple web app demonstrating the numeric integration of a set of function. It is largely based on an [example by joergbrech](https://share.streamlit.io/joergbrech/truncated-taylor-series/main). [Click here](https://share.streamlit.io/PhiSpel/spielbeispiel-integration/main) to launch the app. This app is built using python and streamlit.
 
-[](screenshot.PNG)
+![](screenshot.PNG)
 
 To run locally, enter the following commands into a terminal to install all requirements first:
 
