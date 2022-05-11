@@ -263,7 +263,7 @@ if qr:
                     'https://share.streamlit.io/PhiSpel/spielbeispiel-integration/main" width="200"/>',
                     unsafe_allow_html=True)
 else:
-    st.title('Approximated Data Points')
+    st.title('Integration of a function f(x)')
         
 col1,col2,col3 = st.columns(3)
 with col1:
